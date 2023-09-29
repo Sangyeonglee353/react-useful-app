@@ -16,7 +16,11 @@ const HomePage = () => {
             Find <br /> Coordinate Version 1
           </Link>
         </li>
-        <li className="square bg-red-500">3</li>
+        <li className="square bg-red-500 text-center">
+          <Link to="findcoordinatev2">
+            Find <br /> Coordinate Version 2
+          </Link>
+        </li>
         <li className="square bg-yellow-500">4</li>
         <li className="square bg-purple-500">5</li>
         <li className="square bg-indigo-500">6</li>

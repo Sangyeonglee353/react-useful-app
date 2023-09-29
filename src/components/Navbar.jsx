@@ -26,6 +26,11 @@ const Navbar = () => {
                 Transfer
               </Link>
             </li>
+            <li>
+              <Link to="test" className="cursor-pointer">
+                Test
+              </Link>
+            </li>
           </ul>
         </div>
         <div className="hidden pr-4 md:flex">
@@ -64,6 +69,15 @@ const Navbar = () => {
             className="cursor-pointer"
           >
             Transfer
+          </Link>
+        </li>
+        <li className="w-full border-b-2 border-zinc-300">
+          <Link
+            onClick={() => setNav(false)}
+            to="test"
+            className="cursor-pointer"
+          >
+            Test
           </Link>
         </li>
 
