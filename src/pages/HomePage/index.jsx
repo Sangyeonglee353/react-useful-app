@@ -21,7 +21,9 @@ const HomePage = () => {
             Find <br /> Coordinate Version 2
           </Link>
         </li>
-        <li className="square bg-yellow-500">4</li>
+        <li className="square bg-yellow-500 text-center">
+          <Link to="kakaomap">Kakao Map</Link>
+        </li>
         <li className="square bg-purple-500">5</li>
         <li className="square bg-indigo-500">6</li>
         <li className="square bg-indigo-500">6</li>
