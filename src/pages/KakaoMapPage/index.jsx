@@ -1,8 +1,15 @@
 /* 카카오맵 호출 페이지 */
-/*
+/* [버전 1]_JS만을 사용한
  * 주요 기능
+ * [구현]
  * 카카오 API를 이용하여 지도 출력
- *
+ * 중심 위도와 경도 표시
+ * 이동이 완료된 이후 표시
+ * 현재 위치의 마커 표시하기
+ * [구현전]
+ * 선택한 위치로 이동하기
+ * [버전 UP]
+ * react-kakako-map-sdk 사용
  * 참고 사항
  * index.html에서 kakao api를 호출할 때는 상관 없으나, 해당 파일에서 kakao api호출 시에는 autoload=false 옵션을 추가해주어야 한다.
  */
@@ -33,12 +40,36 @@ const KakaoMapPage = () => {
         };
         const map = new window.kakao.maps.Map(container, options);
 
-        // Get map info
-        window.kakao.maps.event.addListener(map, "center_changed", () => {
+        // 🚀 Static present the map maker
+        // 1. set marker position
+        let position = new window.kakao.maps.LatLng(37.5665, 126.978);
+        // 2. create a marker
+        let marker = new window.kakao.maps.Marker({
+          position: position,
+        });
+        // 3. create a maker in the map
+        marker.setMap(map);
+
+        // 🚀 Get map coordinate info
+        // [1] center_changed: 중심 좌표가 변경된 경우
+        // [2] dragend: 드래그가 끝난 경우
+        window.kakao.maps.event.addListener(map, "dragend", () => {
           let center = map.getCenter();
-          console.log("위도: ", center.getLat(), "경도: ", center.getLng());
           setLatitude(center.getLat());
           setLongitude(center.getLng());
+
+          // 🚀 Dynamic present the map maker
+          // 1. set marker position
+          let position = new window.kakao.maps.LatLng(
+            center.getLat(),
+            center.getLng()
+          );
+          // 2. create a marker
+          let marker = new window.kakao.maps.Marker({
+            position: position,
+          });
+          // 3. create a maker in the map
+          marker.setMap(map);
         });
       });
       //   };
@@ -75,9 +106,9 @@ const KakaoMapPage = () => {
       />
       <div className="flex flex-col absolute w-full h-full">
         <div className="flex flex-col w-[500px] h-[500px] m-auto z-10">
-          <h3 className="text-center">
+          <h2 className="text-center">
             위도: {latitude}, 경도: {longitude}
-          </h3>
+          </h2>
           <div id="kakao-map" className="w-full h-full"></div>
         </div>
       </div>
