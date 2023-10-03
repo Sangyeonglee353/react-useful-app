@@ -6,13 +6,15 @@
  * 참고 사항
  * index.html에서 kakao api를 호출할 때는 상관 없으나, 해당 파일에서 kakao api호출 시에는 autoload=false 옵션을 추가해주어야 한다.
  */
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import kakaoImg from "../../assets/images/kakao_bg.png";
 import Script from "react-load-script";
 import config from "../../api/apikey";
 
 const KakaoMapPage = () => {
   const KAKAO_API_KEY = config.KAKAO_API_KEY;
+  const [latitude, setLatitude] = useState(""); // 위도
+  const [longitude, setLongitude] = useState(""); // 경도
 
   const getKakaoMapData = () => {
     try {
@@ -30,6 +32,14 @@ const KakaoMapPage = () => {
           level: 3, // 확대 수준 설정
         };
         const map = new window.kakao.maps.Map(container, options);
+
+        // Get map info
+        window.kakao.maps.event.addListener(map, "center_changed", () => {
+          let center = map.getCenter();
+          console.log("위도: ", center.getLat(), "경도: ", center.getLng());
+          setLatitude(center.getLat());
+          setLongitude(center.getLng());
+        });
       });
       //   };
 
@@ -52,7 +62,7 @@ const KakaoMapPage = () => {
       <div className="w-full h-full absoulte bg-kakao-color"></div>
       <div className="w-full h-full absolute inset-0 flex items-end justify-center">
         <img
-          className="object-center h-[200px]"
+          className="object-cendoslfter h-[200px]"
           src={kakaoImg}
           alt="kakaoImg"
         />
@@ -63,8 +73,11 @@ const KakaoMapPage = () => {
         url={`//dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_API_KEY}&autoload=false`}
         onLoad={getKakaoMapData}
       />
-      <div className="flex absolute w-full h-full">
-        <div className="flex w-[500px] h-[500px] m-auto bg-blue-500 z-10">
+      <div className="flex flex-col absolute w-full h-full">
+        <div className="flex flex-col w-[500px] h-[500px] m-auto z-10">
+          <h3 className="text-center">
+            위도: {latitude}, 경도: {longitude}
+          </h3>
           <div id="kakao-map" className="w-full h-full"></div>
         </div>
       </div>
