@@ -40,15 +40,20 @@ const KakaoMapPage = () => {
         };
         const map = new window.kakao.maps.Map(container, options);
 
+        // 🚀 Present marker function in the map
+        const presentMarker = (latitude, longitude) => {
+          // 1. set marker position
+          let position = new window.kakao.maps.LatLng(latitude, longitude);
+          // 2. create a marker
+          let marker = new window.kakao.maps.Marker({
+            position: position,
+          });
+          // 3. create a maker in the map
+          marker.setMap(map);
+        };
+
         // 🚀 Static present the map maker
-        // 1. set marker position
-        let position = new window.kakao.maps.LatLng(37.5665, 126.978);
-        // 2. create a marker
-        let marker = new window.kakao.maps.Marker({
-          position: position,
-        });
-        // 3. create a maker in the map
-        marker.setMap(map);
+        presentMarker(37.5665, 126.978);
 
         // 🚀 Get map coordinate info
         // [1] center_changed: 중심 좌표가 변경된 경우
@@ -59,17 +64,7 @@ const KakaoMapPage = () => {
           setLongitude(center.getLng());
 
           // 🚀 Dynamic present the map maker
-          // 1. set marker position
-          let position = new window.kakao.maps.LatLng(
-            center.getLat(),
-            center.getLng()
-          );
-          // 2. create a marker
-          let marker = new window.kakao.maps.Marker({
-            position: position,
-          });
-          // 3. create a maker in the map
-          marker.setMap(map);
+          presentMarker(center.getLat(), center.getLng());
         });
       });
       //   };
