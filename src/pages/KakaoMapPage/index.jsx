@@ -7,8 +7,8 @@
  * 드래그 이동 후 마커 표시하기
  * 현재 위치의 마커 표시하기
  * 클릭한 위치의 마커 표시하기 + 주소 표시하기
- * [구현전]
  * 주소 검색 + 이동 기능 -> 검색은 맵 표시 함수와 분리해서 작성해야 함.
+ * [구현전]
  * 위도, 경도 useState 변수 통합
  * [버전 UP]
  * react-kakako-map-sdk 사용
@@ -27,11 +27,11 @@ const KakaoMapPage = () => {
   const [longitude, setLongitude] = useState(""); // 경도
   const [searchText, setSearchText] = useState(""); // 검색어
 
-  // 전역 변수 선언
-  let map;
-  let marker;
-  let geocoder;
-  let infowindow;
+  // 카카오 맵 관련 변수 선언
+  const [map, setMap] = useState(null);
+  const [marker, setMarker] = useState(null);
+  const [geocoder, setGeocoder] = useState(null);
+  const [infowindow, setInfowindow] = useState(null);
 
   const handleSearchText = (e) => {
     setSearchText(e.target.value);
@@ -56,7 +56,13 @@ const KakaoMapPage = () => {
           console.log("검색 결과: ", latLng.getLat(), latLng.getLng());
 
           // 검색 결과를 화면에 표시
+          // 1. 검색 결과 중심 위치 이동
           displaySearchAddress(latLng, firstResult);
+
+          // 2. 검색 결과를 화면에 마커로 표시
+          searchDetailAddrFromCoords(latLng, (result, status) =>
+            displayAddress(latLng, result, status)
+          );
         } else {
           alert("주소를 찾을 수 없습니다.");
         }
@@ -66,10 +72,9 @@ const KakaoMapPage = () => {
     }
   };
 
-  // 검색 결과를 지도에 표시하는 함수
+  // 🎇 검색 결과를 지도에 표시하는 함수
   const displaySearchAddress = (latLng, result) => {
     // 결과 좌표를 중심으로 지도 이동
-    // console.log("map: ", map);
     map.setCenter(latLng);
   };
 
@@ -137,10 +142,28 @@ const KakaoMapPage = () => {
 
       // 💫 Present address info
       infowindow.setContent(content);
-      infowindow.open(map, marker); // 수정 필요[presentMarker()]
+      infowindow.open(map, marker);
     }
   };
 
+  const handleEvent = () => {
+    if (map) {
+      // 💫 Present address at map left-top, after search current center of map coordinates.
+      window.kakao.maps.event.addListener(map, "click", (mouseEvent) => {
+        searchDetailAddrFromCoords(mouseEvent.latLng, (result, status) =>
+          displayAddress(mouseEvent.latLng, result, status)
+        );
+      });
+
+      // 💫 Present address info when changed center position & zoom size
+      window.kakao.maps.event.addListener(map, "idle", () => {
+        searchAddrFromCoords(map.getCenter(), displayCenterInfo);
+      });
+      // 🚀 Static present marker in the map
+      presentMarker(37.5665, 126.978);
+    }
+  };
+  // 🎇 카카오맵 표시 함수
   const getKakaoMapData = () => {
     try {
       // Kakao 지도 API 초기화
@@ -158,74 +181,24 @@ const KakaoMapPage = () => {
         };
         // 💫 Create Map
         // const map = new window.kakao.maps.Map(container, options);
-        map = new window.kakao.maps.Map(container, options);
+        // map = new window.kakao.maps.Map(container, options);
+        // setMap(new window.kakao.maps.Map(container, options));
+        const newMap = new window.kakao.maps.Map(container, options);
+        setMap(newMap);
+
+        console.log("map in getkakaodataMap:", map);
 
         // 📌 Create Address to Coordinates object
         // [Condition]
         // Must need to property 'libraries=services' in kakao api url.
-        // let geocoder = new window.kakao.maps.services.Geocoder();
-        geocoder = new window.kakao.maps.services.Geocoder();
+        const newGeocoder = new window.kakao.maps.services.Geocoder();
+        setGeocoder(newGeocoder);
 
         // 📌 Define marker & infowindow
-        // let marker = new window.kakao.maps.Marker();
-        // let infowindow = new window.kakao.maps.InfoWindow({ zindex: 1 });
-        marker = new window.kakao.maps.Marker();
-        infowindow = new window.kakao.maps.InfoWindow({ zindex: 1 });
-
-        // 💫 Present address at map left-top, after search current center of map coordinates.
-        window.kakao.maps.event.addListener(map, "click", (mouseEvent) => {
-          //   searchDetailAddrFromCoords(mouseEvent.latLng, (result, status) => {
-          //     if (status === window.kakao.maps.services.Status.OK) {
-          //       let detailAddr = !!result[0].road_address
-          //         ? "<div>도로명주소: " +
-          //           result[0].road_address.address_name +
-          //           "</div>"
-          //         : "";
-          //       detailAddr +=
-          //         "<div>지번 주소: " + result[0].address.address_name + "</div>";
-
-          //       let content =
-          //         '<div style="padding: 5px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">' +
-          //         '<span style="display: block; font-weight: bold;">법정동 주소정보</span>' +
-          //         detailAddr +
-          //         "</div>";
-
-          //       // 🚀 Dynamic present marker in the map
-          //       presentMarker(
-          //         mouseEvent.latLng.getLat(),
-          //         mouseEvent.latLng.getLng()
-          //       );
-
-          //       // 💫 Save latitude and longitude in the state
-          //       setLatitude(mouseEvent.latLng.getLat());
-          //       setLongitude(mouseEvent.latLng.getLng());
-
-          //       // 💫 Present address info
-          //       infowindow.setContent(content);
-          //       infowindow.open(map, marker); // 수정 필요[presentMarker()]
-          //     }
-          //   });
-          searchDetailAddrFromCoords(mouseEvent.latLng, (result, status) =>
-            displayAddress(mouseEvent.latLng, result, status)
-          );
-        });
-
-        // 💫 Present address info when changed center position & zoom size
-        window.kakao.maps.event.addListener(map, "idle", () => {
-          searchAddrFromCoords(map.getCenter(), displayCenterInfo);
-        });
-
-        // 🎇 주소 검색 및 위치 표시 함수
-        const displaySearchAddress = (result, status) => {
-          // 정상 검색 완료 시
-          if (status === window.kakao.maps.services.Status.OK) {
-            let latLng = new window.kakao.maps.LatLng(result[0].y, result[0].x);
-            displayAddress(latLng, result, status);
-          }
-        };
-
-        // 🚀 Static present marker in the map
-        presentMarker(37.5665, 126.978);
+        const newMarker = new window.kakao.maps.Marker();
+        setMarker(newMarker);
+        const newInfowindow = new window.kakao.maps.InfoWindow({ zindex: 1 });
+        setInfowindow(newInfowindow);
 
         // 💫 Get map coordinate info
         // [1] center_changed: 중심 좌표가 변경된 경우
@@ -265,6 +238,10 @@ const KakaoMapPage = () => {
     getKakaoMapData();
   }, []);
 
+  useEffect(() => {
+    handleEvent();
+  }, [map]);
+
   return (
     <section name="match" className="flex w-full h-screen relative">
       {/* 배경 이미지: 색상_FFD701 */}
@@ -283,7 +260,7 @@ const KakaoMapPage = () => {
         onLoad={getKakaoMapData}
       />
       <div className="flex flex-col absolute w-full h-full">
-        <div className="flex flex-col w-[500px] h-[600px] m-auto relative">
+        <div className="flex flex-col w-[500px] md:w-[70%] h-[600px] m-auto relative">
           <div id="kakao-map" className="w-full h-[500px] z-[1]"></div>
           <div className="absolute left-5 top-5 border rounded-[2px] bg-white bg-opacity-80 z-[2] p-5">
             <span className="block font-bold">
@@ -298,7 +275,7 @@ const KakaoMapPage = () => {
               onChange={handleSearchText}
               className="h-full px-2"
               placeholder="Search..."
-            ></input>
+            />
             <button className="ml-2 px-2" onClick={handleSearch}>
               검색
             </button>
