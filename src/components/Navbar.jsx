@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 const Navbar = () => {
   const [nav, setNav] = useState(false);
   return (
-    <nav className="w-screen h-[80px] z-10 bg-zinc-200 fixed drop-shadow-lg">
+    <nav className="w-screen h-[80px] z-20 bg-zinc-200 fixed drop-shadow-lg">
       <div className="flex items-center justify-between w-full h-full px-10">
         <div className="flex items-center">
           <h1 className="mr-4 text-3xl font-bold sm:text-4xl">
