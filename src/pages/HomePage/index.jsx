@@ -70,7 +70,14 @@ const HomePage = () => {
               Kakao Map
             </Link>
           </li>
-          <li className="square bg-purple-500">5</li>
+          <li className="square bg-purple-500 text-center relative">
+            <Link
+              to="weatherinfo"
+              className="z-[2] inset-0 justify-center items-center text-white text-lg"
+            >
+              Weather Info
+            </Link>
+          </li>
           <li className="square bg-indigo-500">6</li>
           <li className="square bg-indigo-500">6</li>
           <li className="square bg-indigo-500">6</li>
