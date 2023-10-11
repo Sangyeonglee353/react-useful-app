@@ -2,7 +2,22 @@
  * [버전 1] 위도, 경도로 날씨 정보 출력
  * [버전 2] 주소로 날씨 정보 출력
  * [버전 3] 카카오 맵 좌표로 날씨 정보 출력
- * 1. 기상청 API
+ *
+ * 기상청 API 출력 데이터 유형
+ * [0] PTY: 강수형태(코드값),
+ * [1] REH: 습도(%),
+ * [2] RN1: 1시간 강수량(범주 1mm),
+ * [3] T1H: 기온(℃),
+ * [4] UUU: 동서바람성분(m/s),
+ * [5] VEC: 풍향(deg),
+ * [6] VVV: 남북바람성분(m/s),
+ * [7] WSD: 풍속(m/s)}
+ *
+ * [기능 정의]
+ * 기상청으로부터 총 8개의 데이터를 가져올 수 있다.
+ * 하지만, 모든 값을 기준으로 날씨를 판별하긴 어려우므로,
+ * (1) 강수형태, (2) 습도, (3) 기온만을 가지고 날씨를 판별한다.
+ *
  * [구현]
  * [구현 전]
  * 요청 데이터 형식에 따른 값 출력(XML/JSON)
@@ -17,6 +32,14 @@ import { useState } from "react";
 const WeatehrInfoPage = () => {
   const WEATHER_API_KEY = config.WEATHER_API_KEY;
   const [xhr, setXhr] = useState(null);
+  const [weatherData, setWeatherData] = useState({
+    baseDate: null,
+    baseTime: null,
+    category: null,
+    nx: null,
+    ny: null,
+    obsrValue: null,
+  });
 
   useEffect(() => {
     getWeatherData();
@@ -53,7 +76,7 @@ const WeatehrInfoPage = () => {
       "&" +
       encodeURIComponent("base_date") +
       "=" +
-      encodeURIComponent("20231010"); /*발표 일자*/
+      encodeURIComponent("20231011"); /*발표 일자*/
     queryParams +=
       "&" +
       encodeURIComponent("base_time") +
@@ -63,12 +86,12 @@ const WeatehrInfoPage = () => {
       "&" +
       encodeURIComponent("nx") +
       "=" +
-      encodeURIComponent("55"); /*예보지점 X 좌표(경도: longitude)*/
+      encodeURIComponent("37"); /*예보지점 X 좌표(경도: longitude)*/
     queryParams +=
       "&" +
       encodeURIComponent("ny") +
       "=" +
-      encodeURIComponent("127"); /*예보지점 Y 좌표(위도: Latitude)*/
+      encodeURIComponent("126"); /*예보지점 Y 좌표(위도: Latitude)*/
 
     if (xhr) {
       xhr.open("GET", url + queryParams);
@@ -127,9 +150,21 @@ const WeatehrInfoPage = () => {
         let ny = item.getElementsByTagName("ny")[0].textContent;
         let obsrValue = item.getElementsByTagName("obsrValue")[0].textContent;
 
+        // 값 출력
         console.log("baseDate:", baseDate); // 발표일자
         console.log("basetime:", baseTime); // 발표시각
-        console.log("category:", category); // 자료구분코드 {PTY: , REH: , RN1: , T1H: , UUU: , VEC: , VVV: , WSD: }
+        // 자료구분코드
+        /*
+         * [0] PTY: 강수형태(코드값),
+         * [1] REH: 습도(%),
+         * [2] RN1: 1시간 강수량(범주 1mm),
+         * [3] T1H: 기온(℃),
+         * [4] UUU: 동서바람성분(m/s),
+         * [5] VEC: 풍향(deg),
+         * [6] VVV: 남북바람성분(m/s),
+         * [7] WSD: 풍속(m/s)}
+         */
+        console.log("category:", category);
         console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude)
         console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude)
         console.log("obsrValue:", obsrValue); // 실황값
