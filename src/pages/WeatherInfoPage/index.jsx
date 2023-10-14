@@ -27,7 +27,7 @@
  * 1. 요청 데이터 형식에 따른 값 출력(XML/JSON)
  * 2. 월이 '1자리' 일때 Today가 잘 호출 되는지 확인 필요
  * 3. 경도/위도 -> nx/ny 좌표 변환(기상청 변환 엑셀 시트 기반)
- *
+ * 4. UI: nx, ny와 함께 위도, 경도, 주소까지 출력되도록 변경
  * [주의 사항]
  * 기상청에서 제공하는 엑셀 시트를 기준으로 위도와 경도값을
  * 격자(nx, ny)값으로 변환해서 요청해야 한다.
@@ -259,7 +259,7 @@ const WeatehrInfoPage = () => {
             분
           </span>
           <span className="block text-center mt-2">
-            {weatherData.nx}, {weatherData.ny}
+            {weatherData.nx}, {weatherData.ny} 
           </span>
           <span className="block text-center mt-2">
             {weatherData.tempValue}℃
