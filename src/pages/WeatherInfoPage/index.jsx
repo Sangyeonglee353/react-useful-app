@@ -39,6 +39,7 @@
 import { useEffect } from "react";
 import config from "../../api/apikey";
 import { useState } from "react";
+import sunIcon from "../../assets/images/sun.png";
 
 const WeatehrInfoPage = () => {
   const WEATHER_API_KEY = config.WEATHER_API_KEY;
@@ -246,30 +247,41 @@ const WeatehrInfoPage = () => {
   };
   return (
     <section name="weatherinfo" className="flex w-full h-screen">
-      <div className="w-full h-full bg-gray-800 flex flex-col justify-center items-center">
+      <div className="w-full h-full bg-[#85c6f8] flex flex-col justify-center items-center">
         <div className="w-1/2 h-1/2 bg-white rounded-md">
-          <h2 className="text-center text-2xl mt-5">Weather Info</h2>
-          <span className="block text-center mt-2">
-            {weatherData.baseDate.slice(0, 4)}년{" "}
-            {weatherData.baseDate.slice(4, 6)}월 {weatherData.baseDate.slice(6)}
-            일
-          </span>
-          <span className="block text-center mt-2">
-            {weatherData.baseTime.slice(0, 2)}시 {weatherData.baseTime.slice(2)}
-            분
-          </span>
-          <span className="block text-center mt-2">
-            {weatherData.nx}, {weatherData.ny} 
-          </span>
-          <span className="block text-center mt-2">
-            {weatherData.tempValue}℃
-          </span>
-          <span className="block text-center mt-2">
-            {weatherData.waterValue}
-          </span>
-          <span className="block text-center mt-2">
-            {weatherData.humidityValue}%
-          </span>
+          <h2 className="font-bold text-center text-2xl mt-5">Weather Info</h2>
+          <div className="">
+            {weatherData.baseDate !== null ? (
+              <div className="flex flex-col justify-center items-center">
+                <div className="flex justify-center items-center mt-5">
+                  <div className="relative">
+                    <img
+                      src={sunIcon}
+                      alt="weather_sun"
+                      className="max-w-sm max-h-sm"
+                    />
+                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-2xl">
+                      {weatherData.baseTime.slice(0, 2)}시{" "}
+                      {weatherData.baseTime.slice(2)}분
+                    </span>
+                  </div>
+                </div>
+                {/* <span className="block text-center mt-2">
+                  {weatherData.nx}, {weatherData.ny}
+                </span> */}
+                <span className="block text-center text-xl mt-2">
+                  {weatherData.tempValue}℃ / {weatherData.humidityValue}%
+                </span>
+                <span className="block font-bold text-center text-3xl mt-2">
+                  {weatherData.baseDate.slice(0, 4)}년{" "}
+                  {weatherData.baseDate.slice(4, 6)}월{" "}
+                  {weatherData.baseDate.slice(6)}일
+                </span>
+              </div>
+            ) : (
+              ""
+            )}
+          </div>
         </div>
       </div>
     </section>

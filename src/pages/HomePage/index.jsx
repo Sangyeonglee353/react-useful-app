@@ -5,6 +5,7 @@ import transferIcon from "../../assets/images/Transfer_icon.png";
 import entypoAddressIcon from "../../assets/images/EntypoAddress_icon.png";
 import coordinateIcon from "../../assets/images/Coordinatemap_icon.png";
 import mapIcon from "../../assets/images/Map_icon.png";
+import weatherIcon from "../../assets/images/Weather_icon.png";
 
 const HomePage = () => {
   return (
@@ -70,7 +71,12 @@ const HomePage = () => {
               Kakao Map
             </Link>
           </li>
-          <li className="square bg-purple-500 text-center relative">
+          <li className="square bg-[#85c6f8] text-center relative">
+            <img
+              src={weatherIcon}
+              alt="weatherIcon"
+              className="w-[70%] h-[70%] absolute z-[1] hover:hidden"
+            />
             <Link
               to="weatherinfo"
               className="z-[2] inset-0 justify-center items-center text-white text-lg"
