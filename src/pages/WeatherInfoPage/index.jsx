@@ -35,6 +35,10 @@
  * [기상청 API 참고]
  * 데이터 유형: https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15084084
  * 코드값: https://www.kma.go.kr/images/weather/lifenindustry/timeseries_XML.pdf
+ * API 목록: https://apihub.kma.go.kr/apiList.do?seqApi=10&seqApiSub=286
+ * 현재 사용 API: 동네예보(초단기실황·초단기예보·단기예보) 조회
+ * -> 해당 API에서는 SKY(하늘 정보) 파악 불가.
+ * 실제 필요한 API: 단기예보자료(2001년 2월 이후) 조회
  */
 import { useEffect } from "react";
 import config from "../../api/apikey";
@@ -71,7 +75,8 @@ const WeatehrInfoPage = () => {
     // console.log("xhr: ", xhr);
 
     let url =
-      "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"; /*URL*/
+      // "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"; /*URL: 초단기실황예보*/
+      "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"; /*URL: 단기예보*/
     let queryParams =
       "?" +
       encodeURIComponent("serviceKey") +
@@ -97,7 +102,8 @@ const WeatehrInfoPage = () => {
       encodeURIComponent("base_date") +
       "=" +
       // encodeURIComponent("20231012"); /*발표 일자*/
-      encodeURIComponent(`${year}${month}${day}`); /*발표 일자: Today Fixed*/
+      // encodeURIComponent(`${year}${month}${day}`); /*발표 일자: Today Fixed*/
+      encodeURIComponent("20231018"); /*발표 일자*/
     queryParams +=
       "&" +
       encodeURIComponent("base_time") +
@@ -160,7 +166,9 @@ const WeatehrInfoPage = () => {
       let xmlString = xhr.responseText;
       let xmlDoc = parseXML(xmlString);
 
+      console.log(xmlDoc);
       let items = xmlDoc.getElementsByTagName("item");
+      // console.log(items);
 
       for (let i = 0; i < items.length; i++) {
         let item = items[i];
@@ -169,11 +177,14 @@ const WeatehrInfoPage = () => {
         let category = item.getElementsByTagName("category")[0].textContent;
         let nx = item.getElementsByTagName("nx")[0].textContent;
         let ny = item.getElementsByTagName("ny")[0].textContent;
-        let obsrValue = item.getElementsByTagName("obsrValue")[0].textContent;
+        // let obsrValue = item.getElementsByTagName("obsrValue")[0].textContent;
+        let fcstDate = item.getElementsByTagName("fcstDate")[0].textContent;
+        let fcstTime = item.getElementsByTagName("fcstTime")[0].textContent;
+        let fcstValue = item.getElementsByTagName("fcstValue")[0].textContent;
 
         // 값 출력
-        // console.log("baseDate:", baseDate); // 발표일자
-        // console.log("basetime:", baseTime); // 발표시각
+        console.log("baseDate:", baseDate); // 발표일자
+        console.log("basetime:", baseTime); // 발표시각
         // 자료구분코드
         /*
          * [0] PTY: 강수형태(코드값),
@@ -185,63 +196,65 @@ const WeatehrInfoPage = () => {
          * [6] VVV: 남북바람성분(m/s),
          * [7] WSD: 풍속(m/s)}
          */
-        // console.log("category:", category);
-        // console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
-        // console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
+        console.log("category:", category);
+        console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
+        console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
         // console.log("obsrValue:", obsrValue); // 실황값
-
+        console.log("fcstDate:", fcstDate); // 예보날짜
+        console.log("fcstTime:", fcstTime); // 예보시각
+        console.log("fcstValue:", fcstValue); // 예보값
         // 값 저장
-        if (i === 0) {
-          setWeatherData((prevWeatherData) => ({
-            ...prevWeatherData,
-            baseDate: baseDate,
-            baseTime: baseTime,
-            nx: nx,
-            ny: ny,
-          }));
-          console.log("baseDate: ", baseDate);
-          console.log("baseTime: ", baseTime);
-          console.log("nx: ", nx);
-          console.log("ny: ", ny);
-        }
+        // if (i === 0) {
+        //   setWeatherData((prevWeatherData) => ({
+        //     ...prevWeatherData,
+        //     baseDate: baseDate,
+        //     baseTime: baseTime,
+        //     nx: nx,
+        //     ny: ny,
+        //   }));
+        //   console.log("baseDate: ", baseDate);
+        //   console.log("baseTime: ", baseTime);
+        //   console.log("nx: ", nx);
+        //   console.log("ny: ", ny);
+        // }
 
-        if (category === "T1H") {
-          // 기온(℃)
-          setWeatherData((prevWeatherData) => ({
-            ...prevWeatherData,
-            tempValue: obsrValue,
-          }));
-          console.log("tempValue: ", obsrValue);
-        } else if (category === "PTY") {
-          // 강수형태(코드값) -> 텍스트 변환
-          let result;
-          if (obsrValue === "0") {
-            result = "맑음";
-          } else if (obsrValue === "1") {
-            result = "비";
-          } else if (obsrValue === "2") {
-            result = "비&눈";
-          } else if (obsrValue === "3") {
-            result = "눈&비";
-          } else if (obsrValue === "4") {
-            result = "눈";
-          } else {
-            result = "측정불가";
-          }
+        // if (category === "T1H") {
+        //   // 기온(℃)
+        //   setWeatherData((prevWeatherData) => ({
+        //     ...prevWeatherData,
+        //     tempValue: obsrValue,
+        //   }));
+        //   console.log("tempValue: ", obsrValue);
+        // } else if (category === "PTY") {
+        //   // 강수형태(코드값) -> 텍스트 변환
+        //   let result;
+        //   if (obsrValue === "0") {
+        //     result = "맑음";
+        //   } else if (obsrValue === "1") {
+        //     result = "비";
+        //   } else if (obsrValue === "2") {
+        //     result = "비&눈";
+        //   } else if (obsrValue === "3") {
+        //     result = "눈&비";
+        //   } else if (obsrValue === "4") {
+        //     result = "눈";
+        //   } else {
+        //     result = "측정불가";
+        //   }
 
-          setWeatherData((prevWeatherData) => ({
-            ...prevWeatherData,
-            waterValue: result,
-          }));
-          console.log("waterValue: ", obsrValue);
-        } else if (category === "REH") {
-          // 습도
-          setWeatherData((prevWeatherData) => ({
-            ...prevWeatherData,
-            humidityValue: obsrValue,
-          }));
-          console.log("humidityValue: ", obsrValue);
-        }
+        //   setWeatherData((prevWeatherData) => ({
+        //     ...prevWeatherData,
+        //     waterValue: result,
+        //   }));
+        //   console.log("waterValue: ", obsrValue);
+        // } else if (category === "REH") {
+        //   // 습도
+        //   setWeatherData((prevWeatherData) => ({
+        //     ...prevWeatherData,
+        //     humidityValue: obsrValue,
+        //   }));
+        //   console.log("humidityValue: ", obsrValue);
+        // }
       }
     }
   };
