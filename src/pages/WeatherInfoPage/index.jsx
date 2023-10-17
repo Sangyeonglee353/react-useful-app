@@ -37,8 +37,16 @@
  * 코드값: https://www.kma.go.kr/images/weather/lifenindustry/timeseries_XML.pdf
  * API 목록: https://apihub.kma.go.kr/apiList.do?seqApi=10&seqApiSub=286
  * 현재 사용 API: 동네예보(초단기실황·초단기예보·단기예보) 조회
- * -> 해당 API에서는 SKY(하늘 정보) 파악 불가.
- * 실제 필요한 API: 단기예보자료(2001년 2월 이후) 조회
+ * -----------------------------------
+ * 단기예보 조회서비스(API별 URL 차이)
+ * -----------------------------------
+ * getUltraSrtNcst: 초단기실황조회
+ * getUltraSrtFcst: 초단기예보조회
+ * getVilageFcst: 단기예보조회
+ * getFcstVersion: 예보버전조회
+ * 해당 페이지의 목적은 당일 날씨만 가져오는 것이다.
+ * 따라서, (초단기예보조회)
+ * 현재 날짜와 시간을 기준으로 가장 최근의 날씨 정보를 가져오는 것이 적합하다.
  */
 import { useEffect } from "react";
 import config from "../../api/apikey";
@@ -48,19 +56,36 @@ import sunIcon from "../../assets/images/sun.png";
 const WeatehrInfoPage = () => {
   const WEATHER_API_KEY = config.WEATHER_API_KEY;
   const [xhr, setXhr] = useState(null);
+  // 예보시각별로 저장
   const [weatherData, setWeatherData] = useState({
     baseDate: null, // 발표일자
     baseTime: null, // 발표시각
     nx: null, // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
     ny: null, // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
-    tempValue: null, // 온도(℃)_자료구분코드: T1H
-    waterValue: null, // 강수형태(코드값)_자료구분코드: PTY
-    humidityValue: null, // 습도(%)_자료구분코드: REH
+    fcstDate: null, // 예보날짜
+    fcstTime: [null], // 예보시각
+    tempValue: [null], // 온도(℃)_자료구분코드: T1H
+    waterValue: [null], // 강수형태(코드값)_자료구분코드: PTY
+    skyValue: [null],
+    humidityValue: [null], // 습도(%)_자료구분코드: REH
   });
+
+  const [categoryList, setCategoryList] = useState([]); // 카테고리 확인 -> 총 10개
+  const [fcstTimeList, setFcstTimeList] = useState([]); // 예보시각 확인 -> 총 6개
 
   useEffect(() => {
     getWeatherData();
   }, []);
+
+  useEffect(() => {
+    const uniqueArray = [...new Set(categoryList)];
+    console.log(uniqueArray);
+  }, [categoryList]);
+
+  useEffect(() => {
+    const uniqueArray = [...new Set(fcstTimeList)];
+    console.log(uniqueArray);
+  }, [fcstTimeList]);
 
   const getWeatherData = () => {
     // 1. 오늘 날짜 가져오기
@@ -76,7 +101,7 @@ const WeatehrInfoPage = () => {
 
     let url =
       // "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"; /*URL: 초단기실황예보*/
-      "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getVilageFcst"; /*URL: 단기예보*/
+      "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"; /*URL: 초단기예보*/
     let queryParams =
       "?" +
       encodeURIComponent("serviceKey") +
@@ -103,22 +128,24 @@ const WeatehrInfoPage = () => {
       "=" +
       // encodeURIComponent("20231012"); /*발표 일자*/
       // encodeURIComponent(`${year}${month}${day}`); /*발표 일자: Today Fixed*/
-      encodeURIComponent("20231018"); /*발표 일자*/
+      encodeURIComponent(
+        "20231018"
+      ); /* 어제, 오늘 기준으로 DB 활성화_출력값은 해당 날짜로부터 4일치 */
     queryParams +=
       "&" +
       encodeURIComponent("base_time") +
       "=" +
-      encodeURIComponent("0600"); /*발표 시각*/
+      encodeURIComponent("0530"); /*발표 시각*/
     queryParams +=
       "&" +
       encodeURIComponent("nx") +
       "=" +
-      encodeURIComponent("58"); /*예보지점 X 좌표(경도: longitude 변환값)*/
+      encodeURIComponent("55"); /*예보지점 X 좌표(경도: longitude 변환값)*/
     queryParams +=
       "&" +
       encodeURIComponent("ny") +
       "=" +
-      encodeURIComponent("125"); /*예보지점 Y 좌표(위도: Latitude 변환값)*/
+      encodeURIComponent("127"); /*예보지점 Y 좌표(위도: Latitude 변환값)*/
 
     if (xhr) {
       xhr.open("GET", url + queryParams);
@@ -183,8 +210,8 @@ const WeatehrInfoPage = () => {
         let fcstValue = item.getElementsByTagName("fcstValue")[0].textContent;
 
         // 값 출력
-        console.log("baseDate:", baseDate); // 발표일자
-        console.log("basetime:", baseTime); // 발표시각
+        // console.log("baseDate:", baseDate); // 발표일자
+        // console.log("basetime:", baseTime); // 발표시각
         // 자료구분코드
         /*
          * [0] PTY: 강수형태(코드값),
@@ -197,12 +224,25 @@ const WeatehrInfoPage = () => {
          * [7] WSD: 풍속(m/s)}
          */
         console.log("category:", category);
-        console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
-        console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
+        if (!categoryList.includes(category)) {
+          setCategoryList((prevCategoryList) => [
+            ...prevCategoryList,
+            category,
+          ]);
+        }
+        // console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
+        // console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
         // console.log("obsrValue:", obsrValue); // 실황값
-        console.log("fcstDate:", fcstDate); // 예보날짜
-        console.log("fcstTime:", fcstTime); // 예보시각
-        console.log("fcstValue:", fcstValue); // 예보값
+        // console.log("fcstDate:", fcstDate); // 예보날짜
+        // console.log("fcstTime:", fcstTime); // 예보시각
+        if (!fcstTimeList.includes(fcstTime)) {
+          setFcstTimeList((prevFcstTimeList) => [
+            ...prevFcstTimeList,
+            fcstTime,
+          ]);
+        }
+
+        // console.log("fcstValue:", fcstValue); // 예보값
         // 값 저장
         // if (i === 0) {
         //   setWeatherData((prevWeatherData) => ({
