@@ -54,6 +54,12 @@ import { useEffect } from "react";
 import config from "../../api/apikey";
 import { useState } from "react";
 import sunIcon from "../../assets/images/sun.png";
+import cloudyIcon from "../../assets/images/cloudy.png";
+import fogIcon from "../../assets/images/fog.png";
+import fogDarkIcon from "../../assets/images/fog_dark.png";
+import rainIcon from "../../assets/images/rain.png";
+import snowIcon from "../../assets/images/snow.png";
+// import rainSnowIcon from "../../asstes/images/rain_snow.png"; // 아이콘 준비중
 
 const WeatehrInfoPage = () => {
   const WEATHER_API_KEY = config.WEATHER_API_KEY;
@@ -73,6 +79,9 @@ const WeatehrInfoPage = () => {
 
   useEffect(() => {
     getWeatherData();
+    // const xhrData = getWeatherData();
+    // xhrData.send("");
+    // handleResponse(xhrData);
   }, []);
 
   // const [categoryList, setCategoryList] = useState([]); // 카테고리 확인 -> 총 10개
@@ -161,8 +170,12 @@ const WeatehrInfoPage = () => {
           // );
           // console.log("info: ", this.responseText);
           handleResponse(xhr);
+          return xhr;
         }
       };
+      // 2번 호출되는 원인은?
+      // setXhr()로 저장을 했지만, xhr이 있는지 여부를 처음에 판별하지 못해서?
+      console.log("xhr: ", xhr);
       xhr.send("");
     }
   };
@@ -220,7 +233,7 @@ const WeatehrInfoPage = () => {
          * [8] VEC: 풍향(deg),
          * [9] WSD: 풍속(m/s)
          */
-        console.log("category:", category);
+        // console.log("category:", category);
 
         // console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
         // console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
@@ -256,7 +269,7 @@ const WeatehrInfoPage = () => {
             ...prevWeatherData,
             fcstTimeList: [...prevWeatherData.fcstTimeList, fcstTime],
           }));
-          console.log("fcstTime: ", fcstTime);
+          // console.log("fcstTime: ", fcstTime);
 
           if (category === "T1H") {
             // 기온(℃)
@@ -343,7 +356,23 @@ const WeatehrInfoPage = () => {
                 <div className="flex justify-center items-center mt-5">
                   <div className="relative">
                     <img
-                      src={sunIcon}
+                      src={
+                        weatherData.statusValueList[0] === "맑음"
+                          ? sunIcon
+                          : weatherData.statusValueList[0] === "구름조금"
+                          ? cloudyIcon
+                          : weatherData.statusValueList[0] === "구름많음"
+                          ? fogIcon
+                          : weatherData.statusValueList[0] === "흐림"
+                          ? fogDarkIcon
+                          : weatherData.statusValueList[0] === "비" ||
+                            weatherData.statusValueList[0] === "비&눈"
+                          ? rainIcon
+                          : weatherData.statusValueList[0] === "눈&비" ||
+                            weatherData.statusValueList[0] === "눈"
+                          ? snowIcon
+                          : sunIcon
+                      }
                       alt="weather_sun"
                       className="max-w-sm max-h-sm"
                     />
@@ -359,9 +388,9 @@ const WeatehrInfoPage = () => {
                 <span className="block text-center text-xl mt-2">
                   {weatherData.tempValueList[0]}℃ /{" "}
                   {weatherData.humidityValueList[0]}%
-                  {console.log("온도: ", weatherData.tempValueList)};
-                  {console.log("습도: ", weatherData.humidityValueList)}
-                  {console.log("예보시각: ", weatherData.fcstTimeList)}
+                  {console.log("온도: ", weatherData.tempValueList)}
+                  {/* {console.log("습도: ", weatherData.humidityValueList)}
+                  {console.log("예보시각: ", weatherData.fcstTimeList)} */}
                 </span>
                 <span className="block font-bold text-center text-3xl mt-2">
                   {weatherData.baseDate.slice(0, 4)}년{" "}
