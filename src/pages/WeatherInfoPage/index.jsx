@@ -19,20 +19,24 @@
  * 1. 기상청으로부터 총 8개의 데이터를 가져올 수 있다.
  * 하지만, 모든 값을 기준으로 날씨를 판별하긴 어려우므로,
  * (1) 강수형태, (2) 습도, (3) 기온만을 가지고 날씨를 판별한다.
- * 2. 최근 1일까지만 날씨정보를 제공하고 있어 날짜는 오늘로 고정
- *
+ * 2. 초단기예보: 발표시간을 기준으로 +6시간의 정보를 제공
+ *   - 현재시간과 비교했을 때 가장 가까운 비교시간을 추출하는 알고리즘 필요(x)
+ *   - 이미 기상청 API에서 이와 같이 제공중 따라서, 현재시간만 입력하도록 변경
+ *   - 목적: 사용자의 선택 요소를 가급적이면 최소한으로 하고자함.
+ * 3.
  * [구현]
  * 1. 오늘 날짜 가져오기
  * 2. 기상청 API 호출
- *
+ * 3. 월이 '1자리' 일때 Today가 잘 호출 되는지 확인 필요 (x) -> 0부터 시작하도록 변경
+ * 4. 현재 시간을 기준으로 가장 근접한 발표 시간의 예보 출력
  * [구현 전]
  * 1. 요청 데이터 형식에 따른 값 출력(XML/JSON)
- * 2. 월이 '1자리' 일때 Today가 잘 호출 되는지 확인 필요
- * 3. 경도/위도 -> nx/ny 좌표 변환(기상청 변환 엑셀 시트 기반)
- * 4. UI: nx, ny와 함께 위도, 경도, 주소까지 출력되도록 변경
+ * 2. 경도/위도 -> nx/ny 좌표 변환(기상청 변환 엑셀 시트 기반)
+ * 3. UI: nx, ny와 함께 위도, 경도, 주소까지 출력되도록 변경
+ * 4. 6시간의 기상 예보 내역 표시(그래프)
  * [주의 사항]
  * 기상청에서 제공하는 엑셀 시트를 기준으로 위도와 경도값을
- * 격자(nx, ny)값으로 변환해서 요청해야 한다.
+ * 격자(nx, ny)값으로 변환해서 요청해야 한다. or 변환식 적용
  *
  * [기상청 API 참고]
  * 데이터 유형: https://www.data.go.kr/tcs/dss/selectApiDataDetailView.do?publicDataPk=15084084
@@ -53,12 +57,12 @@
 import { useEffect } from "react";
 import config from "../../api/apikey";
 import { useState } from "react";
-import sunIcon from "../../assets/images/sun.png";
-import cloudyIcon from "../../assets/images/cloudy.png";
-import fogIcon from "../../assets/images/fog.png";
-import fogDarkIcon from "../../assets/images/fog_dark.png";
-import rainIcon from "../../assets/images/rain.png";
-import snowIcon from "../../assets/images/snow.png";
+import sunIcon from "../../assets/images/sun.png"; // Clear: 맑음
+import cloudyIcon from "../../assets/images/cloudy.png"; // Partly Cloudy: 구름조금
+import fogIcon from "../../assets/images/fog.png"; // Mostly Cloudy:구름많음
+import fogDarkIcon from "../../assets/images/fog_dark.png"; // Cloudy: 흐림
+import rainIcon from "../../assets/images/rain.png"; // Rain: 비
+import snowIcon from "../../assets/images/snow.png"; // Snow: 눈
 // import rainSnowIcon from "../../asstes/images/rain_snow.png"; // 아이콘 준비중
 
 const WeatehrInfoPage = () => {
@@ -97,11 +101,24 @@ const WeatehrInfoPage = () => {
   // }, [fcstTimeList]);
 
   const getWeatherData = () => {
-    // 1. 오늘 날짜 가져오기
+    // 1. 오늘 날짜 가져오기 & 현재 시간 가져오기
     const today = new Date();
     const year = today.getFullYear();
-    const month = today.getMonth() + 1; // 0부터 시작하므로 +1
+    const month = (today.getMonth() + 1).toString().padStart(2, 0); // 0부터 시작하므로 +1 & 1자리 인경우 0으로 시작
     const day = today.getDate();
+    const hours = today.getHours().toString().padStart(2, 0);
+    const minutes = today.getMinutes().toString().padStart(2, 0);
+
+    // [기능] API 호출 시간 변경
+    // 매 API 제공시간 이전에는 해당 시간의 00~30분은 동작하지 않는다.
+    // 해당 시간의 API가 발표된 이후에는 가장 근접한 발표시간의 값을 반환한다.
+    // 따라서, 00~30분인 경우, 이전 시간의 발표시각을 기준으로 API 호출
+    let baseTime = "";
+    if (minutes < "30") {
+      baseTime = (today.getHours() - 1).toString().padStart(2, 0) + "30";
+    } else {
+      baseTime = hours + minutes;
+    }
 
     // 2. 기상청 API 호출
     let xhr = new XMLHttpRequest();
@@ -144,7 +161,8 @@ const WeatehrInfoPage = () => {
       "&" +
       encodeURIComponent("base_time") +
       "=" +
-      encodeURIComponent("0530"); /*발표 시각*/
+      // encodeURIComponent("0810"); /*발표 시각*/
+      encodeURIComponent(`${baseTime}`);
     queryParams +=
       "&" +
       encodeURIComponent("nx") +
@@ -350,54 +368,57 @@ const WeatehrInfoPage = () => {
       <div className="w-full h-full bg-[#85c6f8] flex flex-col justify-center items-center">
         <div className="w-1/2 h-1/2 bg-white rounded-md">
           <h2 className="font-bold text-center text-2xl mt-5">Weather Info</h2>
-          <div className="">
+          <div className="flex">
             {weatherData.baseDate !== null ? (
-              <div className="flex flex-col justify-center items-center">
-                <div className="flex justify-center items-center mt-5">
-                  <div className="relative">
-                    <img
-                      src={
-                        weatherData.statusValueList[0] === "맑음"
-                          ? sunIcon
-                          : weatherData.statusValueList[0] === "구름조금"
-                          ? cloudyIcon
-                          : weatherData.statusValueList[0] === "구름많음"
-                          ? fogIcon
-                          : weatherData.statusValueList[0] === "흐림"
-                          ? fogDarkIcon
-                          : weatherData.statusValueList[0] === "비" ||
-                            weatherData.statusValueList[0] === "비&눈"
-                          ? rainIcon
-                          : weatherData.statusValueList[0] === "눈&비" ||
-                            weatherData.statusValueList[0] === "눈"
-                          ? snowIcon
-                          : sunIcon
-                      }
-                      alt="weather_sun"
-                      className="max-w-sm max-h-sm"
-                    />
-                    <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-2xl">
-                      {weatherData.baseTime.slice(0, 2)}시{" "}
-                      {weatherData.baseTime.slice(2)}분
-                    </span>
+              <>
+                <div className="w-1/2 flex flex-col justify-center items-center">
+                  <div className="flex justify-center items-center mt-5">
+                    <div className="relative">
+                      <img
+                        src={
+                          weatherData.statusValueList[0] === "맑음"
+                            ? sunIcon
+                            : weatherData.statusValueList[0] === "구름조금"
+                            ? cloudyIcon
+                            : weatherData.statusValueList[0] === "구름많음"
+                            ? fogIcon
+                            : weatherData.statusValueList[0] === "흐림"
+                            ? fogDarkIcon
+                            : weatherData.statusValueList[0] === "비" ||
+                              weatherData.statusValueList[0] === "비&눈"
+                            ? rainIcon
+                            : weatherData.statusValueList[0] === "눈&비" ||
+                              weatherData.statusValueList[0] === "눈"
+                            ? snowIcon
+                            : sunIcon
+                        }
+                        alt="weather_sun"
+                        className="max-w-sm max-h-sm"
+                      />
+                      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-2xl">
+                        {weatherData.baseTime.slice(0, 2)}시{" "}
+                        {weatherData.baseTime.slice(2)}분
+                      </span>
+                    </div>
                   </div>
-                </div>
-                {/* <span className="block text-center mt-2">
+                  {/* <span className="block text-center mt-2">
                   {weatherData.nx}, {weatherData.ny}
                 </span> */}
-                <span className="block text-center text-xl mt-2">
-                  {weatherData.tempValueList[0]}℃ /{" "}
-                  {weatherData.humidityValueList[0]}%
-                  {console.log("온도: ", weatherData.tempValueList)}
-                  {/* {console.log("습도: ", weatherData.humidityValueList)}
+                  <span className="block text-center text-xl mt-2">
+                    {weatherData.tempValueList[0]}℃ /{" "}
+                    {weatherData.humidityValueList[0]}%
+                    {console.log("온도: ", weatherData.tempValueList)}
+                    {/* {console.log("습도: ", weatherData.humidityValueList)}
                   {console.log("예보시각: ", weatherData.fcstTimeList)} */}
-                </span>
-                <span className="block font-bold text-center text-3xl mt-2">
-                  {weatherData.baseDate.slice(0, 4)}년{" "}
-                  {weatherData.baseDate.slice(4, 6)}월{" "}
-                  {weatherData.baseDate.slice(6)}일
-                </span>
-              </div>
+                  </span>
+                  <span className="block font-bold text-center text-3xl mt-2">
+                    {weatherData.baseDate.slice(0, 4)}년{" "}
+                    {weatherData.baseDate.slice(4, 6)}월{" "}
+                    {weatherData.baseDate.slice(6)}일
+                  </span>
+                </div>
+                <div className="w-1/2">Graph Area</div>
+              </>
             ) : (
               ""
             )}
