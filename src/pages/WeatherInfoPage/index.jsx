@@ -30,10 +30,10 @@
  * 3. 월이 '1자리' 일때 Today가 잘 호출 되는지 확인 필요 (x) -> 0부터 시작하도록 변경
  * 4. 현재 시간을 기준으로 가장 근접한 발표 시간의 예보 출력
  * [구현 전]
- * 1. 요청 데이터 형식에 따른 값 출력(XML/JSON)
+ * 1. 요청 데이터 형식에 따른 값 출력(XML/JSON) -> JSON형식으로 변환 & async 적용
  * 2. 경도/위도 -> nx/ny 좌표 변환(기상청 변환 엑셀 시트 기반)
  * 3. UI: nx, ny와 함께 위도, 경도, 주소까지 출력되도록 변경
- * 4. 6시간의 기상 예보 내역 표시(그래프)
+ * 4. 6시간의 기상 예보 내역 표시(차트 & 막대 그래프)
  * [주의 사항]
  * 기상청에서 제공하는 엑셀 시트를 기준으로 위도와 경도값을
  * 격자(nx, ny)값으로 변환해서 요청해야 한다. or 변환식 적용
@@ -100,101 +100,62 @@ const WeatehrInfoPage = () => {
   //   console.log(uniqueArray);
   // }, [fcstTimeList]);
 
-  const getWeatherData = () => {
-    // 1. 오늘 날짜 가져오기 & 현재 시간 가져오기
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = (today.getMonth() + 1).toString().padStart(2, 0); // 0부터 시작하므로 +1 & 1자리 인경우 0으로 시작
-    const day = today.getDate();
-    const hours = today.getHours().toString().padStart(2, 0);
-    const minutes = today.getMinutes().toString().padStart(2, 0);
+  const getWeatherData = async () => {
+    try {
+      // 1. 오늘 날짜 가져오기 & 현재 시간 가져오기
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = (today.getMonth() + 1).toString().padStart(2, 0); // 0부터 시작하므로 +1 & 1자리 인경우 0으로 시작
+      const day = today.getDate();
+      const hours = today.getHours().toString().padStart(2, 0);
+      const minutes = today.getMinutes().toString().padStart(2, 0);
 
-    // [기능] API 호출 시간 변경
-    // 매 API 제공시간 이전에는 해당 시간의 00~30분은 동작하지 않는다.
-    // 해당 시간의 API가 발표된 이후에는 가장 근접한 발표시간의 값을 반환한다.
-    // 따라서, 00~30분인 경우, 이전 시간의 발표시각을 기준으로 API 호출
-    let baseTime = "";
-    if (minutes < "30") {
-      baseTime = (today.getHours() - 1).toString().padStart(2, 0) + "30";
-    } else {
-      baseTime = hours + minutes;
-    }
+      // [기능] API 호출 시간 변경
+      // 매 API 제공시간 이전에는 해당 시간의 00~30분은 동작하지 않는다.
+      // 해당 시간의 API가 발표된 이후에는 가장 근접한 발표시간의 값을 반환한다.
+      // 따라서, 00~30분인 경우, 이전 시간의 발표시각을 기준으로 API 호출
+      let baseTime = "";
+      if (minutes < "30") {
+        baseTime = (today.getHours() - 1).toString().padStart(2, 0) + "30";
+      } else {
+        baseTime = hours + minutes;
+      }
 
-    // 2. 기상청 API 호출
-    let xhr = new XMLHttpRequest();
-    setXhr(xhr);
-    // console.log("xhr: ", xhr);
+      // 2. 기상청 API 호출
+      const xhr = new XMLHttpRequest();
+      setXhr(xhr);
+      // console.log("xhr: ", xhr);
 
-    let url =
-      // "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"; /*URL: 초단기실황예보*/
-      "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"; /*URL: 초단기예보*/
-    let queryParams =
-      "?" +
-      encodeURIComponent("serviceKey") +
-      "=" +
-      WEATHER_API_KEY; /*Service Key*/
-    queryParams +=
-      "&" +
-      encodeURIComponent("pageNo") +
-      "=" +
-      encodeURIComponent("1"); /*페이지 번호*/
-    queryParams +=
-      "&" +
-      encodeURIComponent("numOfRows") +
-      "=" +
-      encodeURIComponent("1000"); /*한 페이지 결과 수*/
-    queryParams +=
-      "&" +
-      encodeURIComponent("dataType") +
-      "=" +
-      encodeURIComponent("XML"); /*요청자료 형식(XML/JSON), Default: XML*/
-    queryParams +=
-      "&" +
-      encodeURIComponent("base_date") +
-      "=" +
-      // encodeURIComponent("20231012"); /*발표 일자*/
-      encodeURIComponent(`${year}${month}${day}`); /*발표 일자: Today Fixed*/
-    // encodeURIComponent(
-    //   "20231018"
-    // ); /* 어제, 오늘 기준으로 DB 활성화_출력값은 해당 날짜로부터 4일치 */
-    queryParams +=
-      "&" +
-      encodeURIComponent("base_time") +
-      "=" +
-      // encodeURIComponent("0810"); /*발표 시각*/
-      encodeURIComponent(`${baseTime}`);
-    queryParams +=
-      "&" +
-      encodeURIComponent("nx") +
-      "=" +
-      encodeURIComponent("55"); /*예보지점 X 좌표(경도: longitude 변환값)*/
-    queryParams +=
-      "&" +
-      encodeURIComponent("ny") +
-      "=" +
-      encodeURIComponent("127"); /*예보지점 Y 좌표(위도: Latitude 변환값)*/
+      const url =
+        // "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"; /*URL: 초단기실황예보*/
+        "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtFcst"; /*URL: 초단기예보*/
+      const queryParams = new URLSearchParams();
+      queryParams.append("serviceKey", WEATHER_API_KEY); // Decoding Key를 써야함!
+      queryParams.append("pageNo", "1");
+      queryParams.append("numOfRows", "1000");
+      queryParams.append("dataType", "XML");
+      queryParams.append("base_date", `${year}${month}${day}`);
+      queryParams.append("base_time", baseTime);
+      queryParams.append("nx", "55");
+      queryParams.append("ny", "127");
 
-    if (xhr) {
-      xhr.open("GET", url + queryParams);
-      xhr.onreadystatechange = function () {
-        if (this.readyState === 4) {
-          // alert(
-          //   "Status: " +
-          //     this.status +
-          //     "nHeaders: " +
-          //     JSON.stringify(this.getAllResponseHeaders()) +
-          //     "nBody: " +
-          //     this.responseText
-          // );
-          // console.log("info: ", this.responseText);
-          handleResponse(xhr);
-          return xhr;
-        }
-      };
-      // 2번 호출되는 원인은?
-      // setXhr()로 저장을 했지만, xhr이 있는지 여부를 처음에 판별하지 못해서?
-      console.log("xhr: ", xhr);
-      xhr.send("");
+      xhr.open("GET", url + "?" + queryParams.toString());
+
+      const response = await new Promise((resolve, reject) => {
+        xhr.onreadystatechange = () => {
+          if (xhr.readyState === 4) {
+            if (xhr.status === 200) {
+              resolve(xhr);
+            } else {
+              reject(new Error("Failed to fetch data"));
+            }
+          }
+        };
+        xhr.send();
+      });
+      handleResponse(response);
+    } catch (error) {
+      console.error(error);
     }
   };
 
