@@ -82,10 +82,10 @@ const WeatehrInfoPage = () => {
   });
 
   useEffect(() => {
-    getWeatherData();
-    // const xhrData = getWeatherData();
-    // xhrData.send("");
-    // handleResponse(xhrData);
+    const fetchData = async () => {
+      await getWeatherData();
+    };
+    fetchData();
   }, []);
 
   // const [categoryList, setCategoryList] = useState([]); // 카테고리 확인 -> 총 10개
@@ -124,7 +124,6 @@ const WeatehrInfoPage = () => {
       // 2. 기상청 API 호출
       const xhr = new XMLHttpRequest();
       setXhr(xhr);
-      // console.log("xhr: ", xhr);
 
       const url =
         // "http://apis.data.go.kr/1360000/VilageFcstInfoService_2.0/getUltraSrtNcst"; /*URL: 초단기실황예보*/
@@ -185,6 +184,8 @@ const WeatehrInfoPage = () => {
       let xmlDoc = parseXML(xmlString);
       let items = xmlDoc.getElementsByTagName("item");
 
+      console.log("handleResponse Running");
+
       for (let i = 0; i < items.length; i++) {
         let item = items[i];
         let baseDate = item.getElementsByTagName("baseDate")[0].textContent;
@@ -196,31 +197,6 @@ const WeatehrInfoPage = () => {
         let fcstTime = item.getElementsByTagName("fcstTime")[0].textContent;
         let fcstValue = item.getElementsByTagName("fcstValue")[0].textContent; // 예보값
 
-        // 값 출력
-        // console.log("baseDate:", baseDate); // 발표일자
-        // console.log("basetime:", baseTime); // 발표시각
-        // 자료구분코드
-        /*
-         * [0] lGT: 낙뢰(kA),
-         * [1] PTY: 강수형태(코드값), {0: 없음 / 1: 비 / 2: 비/눈 / 3: 눈/비 / 4: 눈}
-         * [2] RN1: 1시간 강수량(범주 1mm),
-         * [3] SKY: 하늘상태(코드값), {1: 맑음, 2: 구름조금, 3: 구름많음, 4: 흐림}
-         * [4] T1H: 기온(℃),
-         * [5] REH: 습도(%),
-         * [6] UUU: 동서바람성분(m/s),
-         * [7] VVV: 남북바람성분(m/s),
-         * [8] VEC: 풍향(deg),
-         * [9] WSD: 풍속(m/s)
-         */
-        // console.log("category:", category);
-
-        // console.log("nx:", nx); // 입력한 예보지점 X 좌표(경도: Longitude 변환값)
-        // console.log("ny:", ny); // 입력한 예보지점 Y 좌표(위도: Latitude 변환값)
-        // console.log("obsrValue:", obsrValue); // 실황값
-        // console.log("fcstDate:", fcstDate); // 예보날짜
-        // console.log("fcstTime:", fcstTime); // 예보시각
-
-        // console.log("fcstValue:", fcstValue); // 예보값
         // 값 저장
         if (i === 0) {
           setWeatherData((prevWeatherData) => ({
@@ -243,83 +219,84 @@ const WeatehrInfoPage = () => {
         // 120 = 6 * 10 * 2(?)
         // 온도와 습도 모두 중복된 값이 2번 들어감.
         // 현재 이게 2번 실행되고 있음?!
-        if (!weatherData.fcstTimeList.includes(fcstTime)) {
+        if (i >= 0 && i <= 5) {
           setWeatherData((prevWeatherData) => ({
             ...prevWeatherData,
             fcstTimeList: [...prevWeatherData.fcstTimeList, fcstTime],
           }));
-          // console.log("fcstTime: ", fcstTime);
+        } else if (weatherData.fcstTimeList[0] === fcstTime) {
+          console.log("test");
+        }
 
-          if (category === "T1H") {
-            // 기온(℃)
-            setWeatherData((prevWeatherData) => ({
-              ...prevWeatherData,
-              tempValueList: [...prevWeatherData.tempValueList, fcstValue],
-            }));
-            // console.log("tempValue: ", fcstValue);
-          } else if (category === "PTY") {
-            // 강수상태(코드값) -> 텍스트 변환
-            let status;
-            if (fcstValue === "0") {
-              status = "없음";
-            } else if (fcstValue === "1") {
-              status = "비";
-            } else if (fcstValue === "2") {
-              status = "비&눈";
-            } else if (fcstValue === "3") {
-              status = "눈&비";
-            } else if (fcstValue === "4") {
-              status = "눈";
-            } else {
-              status = "측정불가";
-            }
+        if (category === "T1H") {
+          // 기온(℃)
+          setWeatherData((prevWeatherData) => ({
+            ...prevWeatherData,
+            tempValueList: [...prevWeatherData.tempValueList, fcstValue],
+          }));
+          // console.log("tempValue: ", fcstValue);
+        } else if (category === "PTY") {
+          // 강수상태(코드값) -> 텍스트 변환
+          let status;
+          if (fcstValue === "0") {
+            status = "없음";
+          } else if (fcstValue === "1") {
+            status = "비";
+          } else if (fcstValue === "2") {
+            status = "비&눈";
+          } else if (fcstValue === "3") {
+            status = "눈&비";
+          } else if (fcstValue === "4") {
+            status = "눈";
+          } else {
+            status = "측정불가";
+          }
 
-            // [조건] 강수상태 = "없음"인 경우: 하늘상태만 보면 되므로 제외
-            // ✅ 단, 확인필요사항: "없음" 이외의 경우: 하늘 상태는 "흐림"으로 고정인지?
-            if (status !== "없음") {
-              setWeatherData((prevWeatherData) => ({
-                ...prevWeatherData,
-                statusValueList: [...prevWeatherData.statusValueList, status],
-              }));
-              // console.log(
-              //   "statusValue(강수상태): ",
-              //   fcstValue + "(" + status + ")"
-              // );
-            }
-          } else if (category === "SKY") {
-            // 하늘상태(코드값) -> 텍스트 변환
-            let status;
-            if (fcstValue === "1") {
-              status = "맑음";
-            } else if (fcstValue === "2") {
-              status = "구름조금";
-            } else if (fcstValue === "3") {
-              status = "구름많음";
-            } else if (fcstValue === "4") {
-              status = "흐림";
-            } else {
-              status = "측정불가";
-            }
-
+          // [조건] 강수상태 = "없음"인 경우: 하늘상태만 보면 되므로 제외
+          // ✅ 단, 확인필요사항: "없음" 이외의 경우: 하늘 상태는 "흐림"으로 고정인지?
+          if (status !== "없음") {
             setWeatherData((prevWeatherData) => ({
               ...prevWeatherData,
               statusValueList: [...prevWeatherData.statusValueList, status],
             }));
             // console.log(
-            //   "statusValue(하늘상태): ",
+            //   "statusValue(강수상태): ",
             //   fcstValue + "(" + status + ")"
             // );
-          } else if (category === "REH") {
-            // 습도
-            setWeatherData((prevWeatherData) => ({
-              ...prevWeatherData,
-              humidityValueList: [
-                ...prevWeatherData.humidityValueList,
-                fcstValue,
-              ],
-            }));
-            // console.log("humidityValue: ", fcstValue);
           }
+        } else if (category === "SKY") {
+          // 하늘상태(코드값) -> 텍스트 변환
+          let status;
+          if (fcstValue === "1") {
+            status = "맑음";
+          } else if (fcstValue === "2") {
+            status = "구름조금";
+          } else if (fcstValue === "3") {
+            status = "구름많음";
+          } else if (fcstValue === "4") {
+            status = "흐림";
+          } else {
+            status = "측정불가";
+          }
+
+          setWeatherData((prevWeatherData) => ({
+            ...prevWeatherData,
+            statusValueList: [...prevWeatherData.statusValueList, status],
+          }));
+          // console.log(
+          //   "statusValue(하늘상태): ",
+          //   fcstValue + "(" + status + ")"
+          // );
+        } else if (category === "REH") {
+          // 습도
+          setWeatherData((prevWeatherData) => ({
+            ...prevWeatherData,
+            humidityValueList: [
+              ...prevWeatherData.humidityValueList,
+              fcstValue,
+            ],
+          }));
+          // console.log("humidityValue: ", fcstValue);
         }
       }
     }
@@ -369,8 +346,9 @@ const WeatehrInfoPage = () => {
                     {weatherData.tempValueList[0]}℃ /{" "}
                     {weatherData.humidityValueList[0]}%
                     {console.log("온도: ", weatherData.tempValueList)}
-                    {/* {console.log("습도: ", weatherData.humidityValueList)}
-                  {console.log("예보시각: ", weatherData.fcstTimeList)} */}
+                    {console.log("습도: ", weatherData.humidityValueList)}
+                    {console.log("예보시각: ", weatherData.fcstTimeList)}
+                    {console.log("날씨: ", weatherData.statusValueList)}
                   </span>
                   <span className="block font-bold text-center text-3xl mt-2">
                     {weatherData.baseDate.slice(0, 4)}년{" "}
