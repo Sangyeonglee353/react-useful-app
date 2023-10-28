@@ -64,6 +64,7 @@ import fogDarkIcon from "../../assets/images/fog_dark.png"; // Cloudy: 흐림
 import rainIcon from "../../assets/images/rain.png"; // Rain: 비
 import snowIcon from "../../assets/images/snow.png"; // Snow: 눈
 // import rainSnowIcon from "../../asstes/images/rain_snow.png"; // 아이콘 준비중
+import Chart from "../../components/Chart";
 
 const WeatehrInfoPage = () => {
   const WEATHER_API_KEY = config.WEATHER_API_KEY;
@@ -331,7 +332,7 @@ const WeatehrInfoPage = () => {
                             : sunIcon
                         }
                         alt="weather_sun"
-                        className="max-w-sm max-h-sm"
+                        className="max-w-[300px] max-h-[300px]"
                       />
                       <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-2xl">
                         {weatherData.baseTime.slice(0, 2)}시{" "}
@@ -356,7 +357,9 @@ const WeatehrInfoPage = () => {
                     {weatherData.baseDate.slice(6)}일
                   </span>
                 </div>
-                <div className="w-1/2">Graph Area</div>
+                <div className="w-full flex justify-center items-center">
+                  <Chart weatherData={weatherData} />
+                </div>
               </>
             ) : (
               ""
