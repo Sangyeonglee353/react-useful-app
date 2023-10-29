@@ -6,12 +6,13 @@ import {
   LineElement,
   BarElement,
   Tooltip,
-  Legend,
+  // Legend,
   plugins,
 } from "chart.js";
 import { useState } from "react";
 import { Line } from "react-chartjs-2";
-import "chartjs-plugin-datalabels";
+import datalabels from "chartjs-plugin-datalabels";
+import { useEffect } from "react";
 
 ChartJS.register(
   CategoryScale,
@@ -20,8 +21,9 @@ ChartJS.register(
   LineElement,
   BarElement,
   Tooltip,
-  Legend,
-  plugins
+  // Legend,
+  plugins,
+  datalabels
 );
 
 // const data = {
@@ -46,38 +48,89 @@ ChartJS.register(
 // };
 
 const Chart = (props) => {
-  const [data, setData] = useState({
-    labels: ["0800", "0900", "1000", "1100", "1200", "1300"],
+  const [fcstTimeList, setFcstTimeList] = useState([]);
+  const [tempValueList, setTempValueList] = useState([]);
+  const [humidityValueList, setHumidityValueList] = useState([]);
+
+  const data = {
+    // labels: ["0800", "0900", "1000", "1100", "1200", "1300"],
+    labels: fcstTimeList,
     datasets: [
       {
         type: "line",
-        label: "temperatureData",
+        label: "온도",
         yAxisID: "y1",
         borderColor: "rgb(54, 162, 235)",
         borderWidth: 2,
-        data: [1, 2, 3, 4, 5, 6],
+        // data: [1, 2, 3, 4, 5, 6],
+        data: tempValueList,
         fill: false,
+        datalabels: {
+          display: true,
+          align: "top",
+          anchor: "start",
+          formatter: (value, context) => {
+            return value + "°";
+          },
+          color: "black",
+        },
       },
       {
         type: "bar",
-        label: "humidityData",
+        label: "습도",
         yAxisID: "y2",
-        backgroundColor: "rgb(255, 99, 132)",
-        data: [60, 70, 30, 40, 50, 70],
-        borderColor: "red",
+        backgroundColor: ({ chart }) => {
+          const { ctx, chartArea } = chart;
+          if (!chartArea) {
+            // This can happen when the chart is not visible yet.
+            return null;
+          }
+          const gradientFill = ctx.createLinearGradient(
+            0,
+            chartArea.bottom,
+            0,
+            chartArea.top
+          );
+          gradientFill.addColorStop(0, "rgba(0, 0, 255, 0.5)");
+          gradientFill.addColorStop(1, "rgba(0, 0, 255, 0.1)");
+          return gradientFill;
+        },
+        // data: [60, 70, 30, 40, 50, 70],
+        data: humidityValueList,
         borderWidth: 2,
-        // showLine: false,
+        datalabels: {
+          display: true,
+          align: "top",
+          anchor: "start",
+          formatter: (value, context) => {
+            return value + "%";
+          },
+          color: "white",
+        },
       },
     ],
-  });
+  };
 
   const options = {
     responsive: true,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        enabled: false,
+      },
+    },
+    // interaction: {
+    //   intersect: false,
+    //   mode: "index",
+    // },
     scales: {
       y1: {
+        display: false,
         type: "linear",
         position: "left",
         grid: { display: false },
+        min: -5,
+        max: 25,
       },
       y2: {
         type: "linear",
@@ -90,20 +143,19 @@ const Chart = (props) => {
         },
       },
     },
-    // 그래프 위에 데이터 표시
-    plugins: {
-      datalabels: {
-        display: true,
-        align: "top",
-        formatter: (value, context) => value,
-      },
-    },
   };
 
+  useEffect(() => {
+    if (props.weatherData) {
+      setFcstTimeList(props.weatherData.fcstTimeList);
+      setTempValueList(props.weatherData.tempValueList);
+      setHumidityValueList(props.weatherData.humidityValueList);
+    }
+  }, []);
   return (
     <div className="w-full h-full">
       {/* {console.log("test")} */}
-      {console.log("weatherData: ", props.weatherData)}
+      {/* {console.log("weatherData: ", props.weatherData)} */}
       <Line data={data} options={options} />
     </div>
   );

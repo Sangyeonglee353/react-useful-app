@@ -305,12 +305,12 @@ const WeatehrInfoPage = () => {
   return (
     <section name="weatherinfo" className="flex w-full h-screen">
       <div className="w-full h-full bg-[#85c6f8] flex flex-col justify-center items-center">
-        <div className="w-1/2 h-1/2 bg-white rounded-md">
+        <div className="w-1/2 h-auto xl:h-1/2 bg-white rounded-md">
           <h2 className="font-bold text-center text-2xl mt-5">Weather Info</h2>
-          <div className="flex">
+          <div className="xl:h-[calc(50vh-3.25rem)] flex flex-col xl:flex-row justify-center items-center px-10">
             {weatherData.baseDate !== null ? (
               <>
-                <div className="w-1/2 flex flex-col justify-center items-center">
+                <div className="w-full xl:w-1/3 flex flex-col justify-center items-center">
                   <div className="flex justify-center items-center mt-5">
                     <div className="relative">
                       <img
@@ -332,9 +332,9 @@ const WeatehrInfoPage = () => {
                             : sunIcon
                         }
                         alt="weather_sun"
-                        className="max-w-[300px] max-h-[300px]"
+                        className="max-w-[15rem] xl:max-w-1/2"
                       />
-                      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-2xl">
+                      <span className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center text-xl">
                         {weatherData.baseTime.slice(0, 2)}시{" "}
                         {weatherData.baseTime.slice(2)}분
                       </span>
@@ -346,18 +346,14 @@ const WeatehrInfoPage = () => {
                   <span className="block text-center text-xl mt-2">
                     {weatherData.tempValueList[0]}℃ /{" "}
                     {weatherData.humidityValueList[0]}%
-                    {console.log("온도: ", weatherData.tempValueList)}
-                    {console.log("습도: ", weatherData.humidityValueList)}
-                    {console.log("예보시각: ", weatherData.fcstTimeList)}
-                    {console.log("날씨: ", weatherData.statusValueList)}
                   </span>
-                  <span className="block font-bold text-center text-3xl mt-2">
+                  <span className="block font-bold text-center text-2xl mt-2">
                     {weatherData.baseDate.slice(0, 4)}년{" "}
                     {weatherData.baseDate.slice(4, 6)}월{" "}
                     {weatherData.baseDate.slice(6)}일
                   </span>
                 </div>
-                <div className="w-full flex justify-center items-center">
+                <div className="w-full xl:w-2/3 flex flex-col justify-center items-center p-5">
                   <Chart weatherData={weatherData} />
                 </div>
               </>
